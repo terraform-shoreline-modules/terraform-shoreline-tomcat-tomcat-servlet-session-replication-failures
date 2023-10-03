@@ -1,0 +1,122 @@
+{
+  "name": "tomcat_servlet_session_replication_failures",
+  "description": "Tomcat Servlet Session Replication Failures occur when a Tomcat server fails to replicate session data between instances. This can result in users losing their session data or being redirected to a different instance, causing disruption to the application's functionality.",
+  "params": [
+    {
+      "name": "NEW_SESSION_TIMEOUT_VALUE_IN_MINUTES",
+      "value": ""
+    },
+    {
+      "name": "INSTANCE_NUMBER",
+      "value": ""
+    },
+    {
+      "name": "TOMCAT_REPLICATION_PORT",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Tomcat Servlet Session Replication Failures.\nTomcat Servlet Session Replication Failures occur when a Tomcat server fails to replicate session data between instances. This can result in users losing their session data or being redirected to a different instance, causing disruption to the application's functionality."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if all Tomcat instances are up and running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status tomcat${INSTANCE_NUMBER}.service`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if session replication is enabled in server.xml"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `grep -i \"Cluster\" /etc/tomcat${INSTANCE_NUMBER}/server.xml`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the session data is being replicated between instances"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `cat /var/log/tomcat${INSTANCE_NUMBER}/localhost.${INSTANCE_NUMBER}.log | grep -i \"Replication\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the session data is being stored correctly in the shared directory"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `ls -l /var/lib/tomcat${INSTANCE_NUMBER}/work/localhost/SESSIONS.ser`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the firewall is blocking the replication traffic"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `iptables -L -n | grep -i \"ACCEPT\" | grep -i \"dport ${TOMCAT_REPLICATION_PORT}\"`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any errors or exceptions in the logs related to session replication"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `cat /var/log/tomcat${INSTANCE_NUMBER}/catalina.out | grep -i \"error\\|exception\"`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## If the issue persists, try increasing the session timeout value to allow more time for the session data to be replicated."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_update_session_timeout($NEW_SESSION_TIMEOUT_VALUE_IN_MINUTES)"
+    }
+  ]
+}
